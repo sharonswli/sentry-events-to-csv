@@ -18,34 +18,22 @@ import csv
 import requests
 import json
 
-# SENTRY.PY
 
-
+# Fetch events from Sentry. Returns list of JSON objects
 def fetch_events_by_project(project_name):
+    # MOCK read from local file for now:
     with open('/Users/sharonli/scripts/20200428_sentry_events/mock/Get_events_by_project-sentry-loop2-res.json') as res_file:
-        return json.loads(res_file.read())  # a list
-# SENTRY.PY
+        return json.loads(res_file.read())
 
 
 def is_production_event(event):
     tag_list = event.get('tags')
-    environment = next(  # read on iterators
-        tag for tag in tag_list if tag.get('key') == 'environment')  # check syntax
+    environment = next(
+        tag for tag in tag_list if tag.get('key') == 'environment')
     return environment.get('value') == 'production'
 
 
-def write_to_csv(events):
-    with open('output.csv', mode='w') as output_file:
-        output_writer = csv.writer(output_file)
-
-        # Write header
-        output_writer.writerow(['event_id', 'timestamp', 'issue_id', 'issue_name',
-                                'user_id', 'account_id', 'client_id', 'page_id', 'release', 'user_agent'])
-
-        for event in events:
-            output_writer.writerow(event.values())
-
-
+# Create dict from list of event tags
 def flatten_event_tags(tags):
     flatten_tags = {}
     for tag in tags:
@@ -65,13 +53,25 @@ def transform(e):
     # flatten event tag list
     tag_dict = flatten_event_tags(e.get('tags', []))
 
-    # append fields from tags
+    # append fields from tags (Loop 2 tags)
     event['account_id'] = tag_dict.get('accountId')
     event['client_id'] = tag_dict.get('clientId')
     event['page_id'] = tag_dict.get('pageId')
     event['release'] = tag_dict.get('release')
     event['user_agent'] = tag_dict.get('userAgent')
     return event
+
+
+def write_to_csv(events):
+    with open('output.csv', mode='w') as output_file:
+        output_writer = csv.writer(output_file)
+
+        # Write header
+        output_writer.writerow(['event_id', 'timestamp', 'issue_id', 'issue_name',
+                                'user_id', 'account_id', 'client_id', 'page_id', 'release', 'user_agent'])
+        # Write rows
+        for event in events:
+            output_writer.writerow(event.values())
 
 
 if (__name__ == '__main__'):
@@ -87,3 +87,5 @@ if (__name__ == '__main__'):
     print(f'Writing {len(events)} production events to csv...')
 
     write_to_csv(events)
+
+    print('Completed')
