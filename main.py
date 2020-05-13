@@ -15,15 +15,17 @@
     environment (filter only 'production')
 """
 import csv
-import requests
 import json
+import sentry
 
+# MOCK DATA
+import mock_data
 
 # Fetch events from Sentry. Returns list of JSON objects
-def fetch_events_by_project(project_name):
-    # MOCK read from local file for now:
-    with open('/Users/sharonli/scripts/20200428_sentry_events/mock/Get_events_by_project-sentry-loop2-res.json') as res_file:
-        return json.loads(res_file.read())
+# def fetch_events_by_project(project_name):
+#     # MOCK read from local file for now:
+#     with open('/Users/sharonli/scripts/20200428_sentry_events/mock/Get_events_by_project-sentry-loop2-res.json') as res_file:
+#         return json.loads(res_file.read())
 
 
 def is_production_event(event):
@@ -62,8 +64,8 @@ def transform(e):
     return event
 
 
-def write_to_csv(events):
-    with open('output.csv', mode='w') as output_file:
+def write_to_csv(events, filename):
+    with open(filename, mode='w') as output_file:
         output_writer = csv.writer(output_file)
 
         # Write header
@@ -77,15 +79,19 @@ def write_to_csv(events):
 if (__name__ == '__main__'):
     PROJECT_NAME = 'mi-loops-2'
 
-    # fetch events from Sentry by project name
-    json_response = fetch_events_by_project(PROJECT_NAME)
+    # issue_ids = sentry.fetch_issues(PROJECT_NAME)
+    issue_ids = mock_data.issue_ids # MOCK
 
+    print(f'Found {len(issue_ids)} issues in {PROJECT_NAME} sentry project')
+
+  
+    # Testing out single issue
+    events = sentry.fetch_events('1613488552')
     # filter out non-production events
-    sentry_events = list(filter(is_production_event, json_response))
-    events = list(map(transform, sentry_events))
-
-    print(f'Writing {len(events)} production events to csv...')
-
-    write_to_csv(events)
+    prod_events = list(filter(is_production_event, events))
+    # transform json data into csv row
+    rows = list(map(transform, prod_events))
+    print(f'Writing {len(rows)} production events to csv...')
+    write_to_csv(rows, filename = f'event-1613488552.csv')
 
     print('Completed')
