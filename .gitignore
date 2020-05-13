@@ -1,2 +1,4 @@
-output.csv
+*.csv
 mock/*
+.env
+mock_data.py
